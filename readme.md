@@ -11,7 +11,7 @@ Please follow this instruction!
 
 2. Run az login with service principal
    
-   ``` # az login --service-principal -u "881f3a90-70fc-4a5c-af8e-dc9c44d97f31" -p " baf8Q~F759OM.o_Qxi7CgT7m94ZM2Mxg2HUCkazh" --tenant "b1300899-1d95-488c-aa1b-cd5323c7676b" ```
+   ``` # az login --service-principal -u "881f3a90-70fc-4a5c-af8e-dc9c44asd97f31" -p " baf8Q~F759sdsOM.o_Qxi7CgT7m94ZM2Mxg2HUCkazh" --tenant "b13008asa99-1d95-488c-aa1b-cd5323c7676b" ```
 
 
 3. Run python script to generate .tfvars file
