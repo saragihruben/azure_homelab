@@ -1,0 +1,36 @@
+please create terrraform script that create virtual network on azure by this details :
+- vnet name : vnet-homelab
+- resource group : homelab-terraform
+- region : (asia pacific) japan east
+- subnet internal :
+    - include an ipv4 address space
+    - subnet purpose : default
+    - name : int-subnet-homelab
+    - ipv4 address range : 10.29.0.0/16
+    - starting address : 10.29.0.0
+    - size : /24
+
+- subnet GatewaySubnet :
+    - include an ipv4 address space
+    - subnet purpose : Virtual Network Gateway
+    - name : GatewaySubnet
+    - ipv4 address range : 10.29.1.0/16
+    - starting address : 10.29.1.0
+    - size : /24
+
+- subnet ACI :
+    - include an ipv4 address space
+    - subnet purpose : default
+    - name : aci-subnet-homelab
+    - ipv4 address range : 10.29.2.0/16
+    - starting address : 10.29.2.0
+    - size : /24
+    - subnet delegation : Microsoft.ContainerInstance/containerGroups
+
+- tag 
+    - Name : environment
+    - Value : lab
+
+    - Name : category
+    - Valule : network 
+

@@ -1,0 +1,23 @@
+please create terrraform script that deploy azure virtual machine by this details :
+- resource group : homelab-terraform
+- region : (asia pacific) japan east
+- availability options : availability zone
+- zone options : self-selected zone
+- availability zone : Zone 1
+- security type : launch virtual machines
+- image : Ubuntu server 24.04 LTS - x64 gen2
+- vm architecture : x64
+- size : Standard_B2as_v2 - 2vcpus, 8 GiB memory
+- authentication type : password
+- username and password stored on azure keyvault
+- public inbound ports : allow selected port : https(443), ssh(22)
+- os disk size : 64 GiB (E6)
+- os disk type : standard SSD (LRS)
+- disk delete with vm
+- key management : platform-managed key
+- virtual network : vnet-homelab
+- subnet : int-subnet-homelab
+- public ip : none
+- nic nsg : basic
+- delete nic when vm is deleted : yes
+- load balancing options : none

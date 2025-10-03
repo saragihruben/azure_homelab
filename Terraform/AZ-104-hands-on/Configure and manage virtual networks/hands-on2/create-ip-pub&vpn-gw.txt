@@ -1,0 +1,22 @@
+please create terrraform script that create ip public and azure vpn gateway by this detail:
+- ip public name : ip-public-vpngw-homelab
+- ip public address SKU : standard
+- vnet gateway name : vpn-gateway-homelab
+- resource group : homelab-terraform
+- region : (asia pacific) japan east
+- SKU : VpnGw2AZ
+- Generation : Generation2
+- Virtual network : vnet-homelab
+- subnet : GatewaySubnet (10.29.1.0/24) (already exist dont create but choose it)
+- tag :
+    - environment : lab
+    - category : network
+
+- Point-to-site configuration (but i think we need to wait vpn gateway creation to be completed then we can create for this settings / configuration) :
+    - Address pool : 10.100.254.0/28
+    - Tunnel type : IKEv2 and OpenVPN (SSL)
+    - IPsec / IKE policy : default
+    - Authentication type : Azure certificate
+    - Root certificates :
+        Name : RootCertificates
+        Public certificate data : on azure keyvault

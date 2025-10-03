@@ -1,0 +1,32 @@
+please create terrraform script that deploy azure file share by this details :
+- resource group : homelab-terraform
+- region : (asia pacific) japan east
+- storage account name : azfilesharehomelab
+- primary service : azure files
+- performance : standard
+- file share billing : pay-as-you-go file shares
+- redundancy : LRS
+- require secure transfer for rest api : yes
+- enable storage account key access : yes
+- minimum TLS version : 1.2
+- permitted scope for copy operations : From any storage account
+- access tier : cool
+- enable large file shares : yes
+- network access : enable public access from selected virtual networks and IP address
+- virtual network subscription : Azure subscription 1
+- virtual network : vnet-homelab
+- subnet : int-subnet-homelab
+- enable soft delete for blobs : 7 days
+- enable soft delete for containers : 7 days
+- enable soft delete for file shares : 7 days
+- encryption type : Microsoft-managed keys (MMK)
+- enable support for customer-managed keys : Blobs and files only
+- tag
+    - environment : lab
+    - category : storage
+
+and after creation completed, please add new file share :
+- name : nfs-homelab
+- maximum IO/s : 1000 (default on azure portal we cannot choose)
+- maximum capacity : 5 TiB (default on azure portal we cannot choose)
+- Large file shares : Disabled (default on azure portal we cannot choose)

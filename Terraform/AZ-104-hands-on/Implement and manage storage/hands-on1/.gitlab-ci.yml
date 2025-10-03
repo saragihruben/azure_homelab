@@ -1,0 +1,69 @@
+image: harbor.homelab-local.com/azure-terraform-cli/azure-terraform-cli:latest
+
+stages:
+  - init
+  - validate
+  - fmt
+  - plan
+  - apply
+
+before_script:
+  - echo "Logging in to Azure..."
+  - az login --service-principal --username "$ARM_CLIENT_ID" --password "$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID"
+
+init:
+  stage: init
+  script:
+    - terraform init
+  artifacts:
+    paths:
+      - terraform.tfstate
+      - .terraform.lock.hcl
+  only:
+    - main
+    - merge_requests
+
+validate:
+  stage: validate
+  script:
+    - terraform init
+    - terraform validate
+  only:
+    - main
+    - merge_requests
+
+fmt:
+  stage: fmt
+  script:
+    - terraform fmt -check -recursive
+  only:
+    - merge_requests
+
+plan:
+  stage: plan
+  script:
+    - terraform init
+    - terraform plan 
+  artifacts:
+    paths:
+      - terraform.tfplan
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+apply:
+  stage: apply
+  script:
+    - terraform init
+    - terraform apply -auto-approve
+  when: manual
+  environment:
+    name: production
+  only:
+    - main
+
+
+
+
+

@@ -1,0 +1,109 @@
+image: harbor.homelab-local.com/azure-terraform-cli/azure-terraform-cli:latest
+
+stages:
+  - init
+  - validate
+  - fmt
+  - plan
+  - apply
+  - configure
+
+before_script:
+  - echo "Logging in to Azure..."
+  - az login --service-principal --username "$ARM_CLIENT_ID" --password "$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID"
+
+init:
+  stage: init
+  script:
+    - terraform init
+  artifacts:
+    paths:
+      - terraform.tfstate
+      - .terraform.lock.hcl
+  only:
+    - main
+    - merge_requests
+
+validate:
+  stage: validate
+  script:
+    - terraform init
+    - terraform validate
+  only:
+    - main
+    - merge_requests
+
+fmt:
+  stage: fmt
+  script:
+    - terraform fmt -check -recursive
+  only:
+    - merge_requests
+
+plan:
+  stage: plan
+  script:
+    - terraform init
+    - terraform plan 
+  artifacts:
+    paths:
+      - terraform.tfplan
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+apply:
+  stage: apply
+  script:
+    - terraform init
+    - terraform apply -auto-approve
+    - terraform output -raw vm_username > vm_username.txt
+    - terraform output -raw vm_password > vm_password.txt
+    - echo $(terraform output -raw public_ip) > vm_ip.txt
+  artifacts:
+    paths:
+      - vm_ip.txt
+      - vm_username.txt
+      - vm_password.txt
+  when: manual
+  environment:
+    name: production
+  only:
+    - main
+
+mount_azure_file_share:
+  stage: configure
+  dependencies:
+    - apply
+  script:
+    - export VM_IP=$(cat vm_ip.txt)
+    - export AZURE_VM_USER=$(cat vm_username.txt)
+    - export AZURE_VM_PASSWORD=$(cat vm_password.txt)
+
+    - export FILE_SHARE_USER="$FILE_SHARE_USERNAME"
+    - export FILE_SHARE_PASSWORD="$FILE_SHARE_PASSWORD"
+
+    - |
+      ssh -o StrictHostKeyChecking=no "$AZURE_VM_USER@$VM_IP" <<'EOF'
+        sudo apt update
+        sudo apt install -y nfs-common nfs-utils
+
+        sudo mkdir -p /media/nfs-homelab
+        sudo mkdir -p /etc/smbcredentials
+
+        echo "username=$FILE_SHARE_USER" | sudo tee /etc/smbcredentials/azfilesharehomelab.cred > /dev/null
+        echo "password=$FILE_SHARE_PASSWORD" | sudo tee -a /etc/smbcredentials/azfilesharehomelab.cred > /dev/null
+
+        sudo chmod 600 /etc/smbcredentials/azfilesharehomelab.cred
+
+        echo "//azfilesharehomelab.file.core.windows.net/nfs-homelab /media/nfs-homelab cifs nofail,credentials=/etc/smbcredentials/azfilesharehomelab.cred,dir_mode=0755,file_mode=0755,serverino,nosharesock,mfsymlinks,actimeo=30" | sudo tee -a /etc/fstab > /dev/null
+
+        sudo mount -a
+      EOF
+  when: manual
+  only:
+    - main
+
+
+
