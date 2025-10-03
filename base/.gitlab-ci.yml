@@ -1,0 +1,131 @@
+image: harbor.homelab-local.com/azure-terraform-cli/azure-terraform-cli:latest
+
+stages:
+  - init
+  - validate
+  - fmt
+  - plan
+  - apply
+
+before_script:
+  - echo "Logging in to Azure..."
+  - az login --service-principal --username "$ARM_CLIENT_ID" --password "$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID"
+
+init:
+  stage: init
+  script:
+    - cp -r state/* . || echo "No existing state files found"
+    - cp users.tfvars groups.tfvars memberships.tfvars . || echo "No existing tfvars files found"
+    - terraform init
+  artifacts:
+    paths:
+      - terraform.tfstate
+      - .terraform.lock.hcl
+  only:
+    - main
+    - merge_requests
+
+validate:
+  stage: validate
+  script:
+    - cp -r state/* . || echo "No existing state files found"
+    - cp users.tfvars groups.tfvars memberships.tfvars . || echo "No existing tfvars files found"
+    - terraform init
+    - terraform validate
+  only:
+    - main
+    - merge_requests
+
+fmt:
+  stage: fmt
+  script:
+    - terraform fmt -check -recursive
+  only:
+    - merge_requests
+
+plan:
+  stage: plan
+  script:
+    - cp -r state/* . || echo "No existing state files found"
+    - cp users.tfvars groups.tfvars memberships.tfvars . || echo "No existing tfvars files found"
+    - terraform init
+    - terraform plan -var-file="users.tfvars" -var-file="groups.tfvars" -var-file="memberships.tfvars" -out=terraform.tfplan
+  artifacts:
+    paths:
+      - terraform.tfplan
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+apply:
+  stage: apply
+  script:
+    # Git setup
+    - git config --global user.email "gitlab@homelab-local.com"
+    - git config --global user.name "gitlab"
+    - git config --global http.sslVerify false
+    - git config --global credential.helper store
+    - export GIT_SSL_NO_VERIFY=true
+
+    # Authenticate and reset to latest
+    - git remote set-url origin "https://${GITLAB_USERNAME}:${GITLAB_PAT}@gitlab.homelab-local.com/azure/azureiam.git"
+    - git fetch origin $CI_COMMIT_REF_NAME
+    - git checkout $CI_COMMIT_REF_NAME
+    - git reset --hard origin/$CI_COMMIT_REF_NAME
+
+    # Restore state files if they exist
+    - cp -r state/* . || echo "No previous state files"
+    - cp users.tfvars groups.tfvars memberships.tfvars . || echo "No previous tfvars"
+
+    # === Step 1: generate tfvars and commit users/groups ===
+    - python3 generate_tfvars.py
+    - |
+      if [[ ! -s users.tfvars || ! -s groups.tfvars ]]; then
+        echo "ERROR: tfvars files are empty"
+        exit 1
+      fi
+
+    - git add users.tfvars groups.tfvars 
+    - |
+      if ! git diff --cached --quiet; then
+        git commit -m "chore: update users/groups tfvars before apply [skip ci]"
+        git push origin HEAD:$CI_COMMIT_REF_NAME
+      else
+        echo "No changes to users/groups tfvars"
+      fi
+    
+    # === Step 2: terraform apply ===
+    - terraform init
+    - terraform apply -auto-approve -var-file="users.tfvars" -var-file="groups.tfvars" -var-file="memberships.tfvars"
+
+    # === Step 3: regenerate tfvars (memberships) ===
+    - python3 generate_tfvars.py
+
+    # === Step 4: terraform apply again ===
+    - terraform apply -auto-approve -var-file="users.tfvars" -var-file="groups.tfvars" -var-file="memberships.tfvars"
+
+    # === Step 5: commit membership.tfvars + state ===
+    - mkdir -p state
+    - cp terraform.tfstate state/
+    - cp .terraform.lock.hcl state/
+
+    - git add memberships.tfvars state/
+    - |
+      if ! git diff --cached --quiet; then
+        git commit -m "chore: update memberships tfvars and state after apply [skip ci]"
+        git push origin HEAD:$CI_COMMIT_REF_NAME
+      else
+        echo "No changes after final apply"
+      fi
+
+  when: manual
+  environment:
+    name: production
+  only:
+    - main
+
+
+
+
+

@@ -1,0 +1,6 @@
+user_key,user_principal_name,display_name,password,groups
+user1,user1@beenhovenwindowslive.onmicrosoft.com,User One,P@ssword123!,GroupB|GroupC
+user2,user2@beenhovenwindowslive.onmicrosoft.com,User Two,P@ssword123!,GroupC|GroupA
+user3,user3@beenhovenwindowslive.onmicrosoft.com,User Three,P@ssword123!,GroupA|GroupB
+user4,user4@beenhovenwindowslive.onmicrosoft.com,User Four,P@ssword123!,GroupB
+user5,user5@beenhovenwindowslive.onmicrosoft.com,User Five,P@ssword123!,GroupA|GroupC
